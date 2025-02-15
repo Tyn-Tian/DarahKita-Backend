@@ -18,6 +18,7 @@ class CreateUsersTable extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->enum('role', ['pmi', 'donor'])->default('donor');
+            $table->string('password')->nullable();
             $table->string('phone')->nullable();
             $table->string('city')->nullable();
             $table->timestamps();

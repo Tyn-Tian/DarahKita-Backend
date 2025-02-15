@@ -15,7 +15,7 @@ class CreateDonorsTable extends Migration
     {
         Schema::create('donors', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('blood_type');
+            $table->string('blood_type')->nullable();
             $table->date('last_donation')->nullable();
             $table->integer('blood_point')->default(0);
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();

@@ -12,12 +12,11 @@ class Donor extends Model
     public $incrementing = false;
     public $timestamps = true;
     protected $fillable = [
-        'name',
-        'email',
-        'phone',
-        'city',
+        'id',
         'blood_type',
         'last_donation',
+        'blood_point',
+        'user_id',
     ];
 
     public function user()
