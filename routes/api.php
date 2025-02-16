@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DonorController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -18,3 +19,8 @@ use Illuminate\Support\Facades\Route;
 Route::post('/google-login', [UserController::class, 'googleLogin']);
 Route::post('/register', [UserController::class, 'register']);
 Route::post('/login', [UserController::class, 'login']);
+
+Route::middleware('jwt.verify')->group(function () {
+    Route::get('/profile', [DonorController::class, 'getProfile']);
+    Route::patch('/profile', [DonorController::class, 'updateProfile']);
+});
