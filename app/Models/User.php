@@ -9,7 +9,7 @@ class User extends Authenticatable implements JWTSubject
 {
     protected $table = 'users';
     protected $primaryKey = 'id';
-    public $incrementing = false;   
+    public $incrementing = false;
     public $timestamps = true;
     protected $fillable = [
         'id',
@@ -19,6 +19,7 @@ class User extends Authenticatable implements JWTSubject
         'password',
         'phone',
         'city',
+        'address'
     ];
 
     protected $hidden = [
