@@ -25,13 +25,13 @@ class DonorController extends Controller
                 'success' => true,
                 'message' => 'Profile berhasil difetch',
                 'data' => [
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'address' => $user->address,
-                    'city' => $user->city,
-                    'phone' => $user->phone,
-                    'blood' => $blood_type['blood'],
-                    'rhesus' => $blood_type['rhesus']
+                    'name' => $user->name ?? "",
+                    'email' => $user->email ?? "",
+                    'address' => $user->address ?? "",
+                    'city' => $user->city ?? "",
+                    'phone' => $user->phone ?? "",
+                    'blood' => $blood_type['blood'] ?? "",
+                    'rhesus' => $blood_type['rhesus'] ?? ""
                 ]
             ], 200);
         } catch (ModelNotFoundException $e) {

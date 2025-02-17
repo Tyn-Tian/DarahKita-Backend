@@ -4,8 +4,11 @@ namespace App\Helper;
 
 class Utils
 {
-    public static function splitBloodType(string $bloodType): ?array
+    public static function splitBloodType($bloodType)
     {
+        if (!$bloodType) {
+            return null;
+        }
         preg_match('/^(a|b|ab|o)([+-])$/', $bloodType, $matches);
 
         if ($matches) {
