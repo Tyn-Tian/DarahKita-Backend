@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
@@ -26,7 +27,20 @@ class UserController extends Controller
 
         if ($payload) {
             $email = $payload['email'];
+            $googleAvatarUrl = $payload['picture'];
             $user = User::where('email', $email)->first();
+
+            if (!$user->avatar) {
+                $avatarContents = file_get_contents($googleAvatarUrl);
+                $filename = 'avatar-' . time() . '-' . uniqid() . '.jpg';
+                $path = 'avatars/' . $filename;
+
+                Storage::disk('public')->put($path, $avatarContents);
+
+                $user->update([
+                    'avatar' => $path
+                ]);
+            }
 
             if ($user) {
                 $jwt = JWTAuth::fromUser($user);

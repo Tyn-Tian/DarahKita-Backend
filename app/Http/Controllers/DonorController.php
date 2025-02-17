@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class DonorController extends Controller
@@ -31,7 +32,8 @@ class DonorController extends Controller
                     'city' => $user->city ?? "",
                     'phone' => $user->phone ?? "",
                     'blood' => $blood_type['blood'] ?? "",
-                    'rhesus' => $blood_type['rhesus'] ?? ""
+                    'rhesus' => $blood_type['rhesus'] ?? "",
+                    'avatar' => Storage::url($user->avatar) ?? "",
                 ]
             ], 200);
         } catch (ModelNotFoundException $e) {
