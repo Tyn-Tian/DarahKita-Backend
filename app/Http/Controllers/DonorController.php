@@ -38,7 +38,7 @@ class DonorController extends Controller
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Admin tidak ditemukan.'
+                'message' => 'Data tidak ditemukan.'
             ], 404);
         } catch (QueryException $e) {
             DB::rollBack();

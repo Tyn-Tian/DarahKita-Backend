@@ -14,6 +14,7 @@ class BloodStock extends Model
     protected $fillable = [
         'id',
         'blood_type',
+        'rhesus',
         'quantity',
         'pmi_center_id',
     ];

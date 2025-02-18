@@ -16,7 +16,7 @@ class CreateBloodStocksTable extends Migration
         Schema::create('blood_stocks', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->enum('blood_type', ['a', 'b', 'ab', 'o']);
-            $table->enum('rheus', ['+', '-']);
+            $table->enum('rhesus', ['+', '-']);
             $table->integer('quantity');
             $table->foreignUuid('pmi_center_id')->constrained('pmi_centers')->cascadeOnDelete();
             $table->timestamps();

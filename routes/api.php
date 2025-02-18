@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BloodStockController;
 use App\Http\Controllers\DonorController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -23,4 +24,6 @@ Route::post('/login', [UserController::class, 'login']);
 Route::middleware('jwt.verify')->group(function () {
     Route::get('/profile', [DonorController::class, 'getProfile']);
     Route::patch('/profile', [DonorController::class, 'updateProfile']);
+
+    Route::get('/blood-stocks', [BloodStockController::class, 'getBloodStocks']);
 });
