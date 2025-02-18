@@ -1,9 +1,9 @@
 <?php
 
 use App\Http\Controllers\BloodStockController;
+use App\Http\Controllers\DonationController;
 use App\Http\Controllers\DonorController;
 use App\Http\Controllers\UserController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -26,4 +26,6 @@ Route::middleware('jwt.verify')->group(function () {
     Route::patch('/profile', [DonorController::class, 'updateProfile']);
 
     Route::get('/blood-stocks', [BloodStockController::class, 'getBloodStocks']);
+
+    Route::get('/donations-month', [DonationController::class, 'getDonationsByMonth']);
 });

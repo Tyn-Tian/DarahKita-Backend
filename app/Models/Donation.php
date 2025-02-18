@@ -12,6 +12,9 @@ class Donation extends Model
     public $incrementing = false;
     public $timestamps = true;
     protected $fillable = [
+        'id',
+        'date',
+        'status',
         'donor_id',
         'donor_schedule_id',
         'blood_stock_id',

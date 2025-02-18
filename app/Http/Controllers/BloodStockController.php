@@ -18,9 +18,8 @@ class BloodStockController extends Controller
                 ->groupBy('blood_type', 'rhesus')
                 ->get()
                 ->groupBy('blood_type')
-                ->map(function ($items, $bloodType) {
+                ->map(function ($items) {
                     return [
-                        'blood' => $bloodType,
                         'rhesus +' => $items->where('rhesus', '+')->sum('total_stock'),
                         'rhesus -' => $items->where('rhesus', '-')->sum('total_stock')
                     ];
