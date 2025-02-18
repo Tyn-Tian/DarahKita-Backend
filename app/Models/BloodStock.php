@@ -12,6 +12,7 @@ class BloodStock extends Model
     public $incrementing = false;
     public $timestamps = true;
     protected $fillable = [
+        'id',
         'blood_type',
         'quantity',
         'pmi_center_id',

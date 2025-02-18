@@ -15,7 +15,7 @@ class CreatePmiCentersTable extends Migration
     {
         Schema::create('pmi_centers', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->text('location');
+            $table->text('location')->nullable();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
         });
