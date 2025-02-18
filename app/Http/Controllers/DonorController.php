@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Helper\Utils;
 use App\Models\Donor;
 use App\Models\User;
 use Exception;
@@ -20,7 +19,6 @@ class DonorController extends Controller
         try {
             $user = auth()->user();
             $donor = Donor::where('user_id', $user->id)->firstOrFail();
-            $blood_type = Utils::splitBloodType($donor->blood_type);
 
             return response()->json([
                 'success' => true,
@@ -31,8 +29,8 @@ class DonorController extends Controller
                     'address' => $user->address ?? "",
                     'city' => $user->city ?? "",
                     'phone' => $user->phone ?? "",
-                    'blood' => $blood_type['blood'] ?? "",
-                    'rhesus' => $blood_type['rhesus'] ?? "",
+                    'blood' => $donor->blood_type ?? "",
+                    'rhesus' => $donor->rhesus ?? "",
                     'avatar' => Storage::url($user->avatar) ?? "",
                 ]
             ], 200);
@@ -87,7 +85,8 @@ class DonorController extends Controller
                 'address' => $validatedData['address']
             ]);
             Donor::where('user_id', $user->id)->update([
-                'blood_type' => $validatedData['blood'] . $validatedData['rhesus']
+                'blood_type' => $validatedData['blood'],
+                'rhesus' => $validatedData['rhesus']
             ]);
 
             DB::commit();
