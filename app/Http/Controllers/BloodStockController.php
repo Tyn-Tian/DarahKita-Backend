@@ -14,16 +14,22 @@ class BloodStockController extends Controller
     public function getBloodStocks(Request $request)
     {
         try {
-            $bloodStocks = BloodStock::select('blood_type', 'rhesus', DB::raw('SUM(quantity) as total_stock'))
+            $bloodStocks = BloodStock::select(
+                'blood_type',
+                'rhesus',
+                DB::raw('SUM(quantity) as total_stock')
+            )
                 ->groupBy('blood_type', 'rhesus')
                 ->get()
                 ->groupBy('blood_type')
-                ->map(function ($items) {
+                ->map(function ($items, $key) {
                     return [
+                        'blood' => $key,
                         'rhesus +' => $items->where('rhesus', '+')->sum('total_stock'),
-                        'rhesus -' => $items->where('rhesus', '-')->sum('total_stock')
+                        'rhesus -' => $items->where('rhesus', '-')->sum('total_stock'),
                     ];
-                });
+                })
+                ->values();
 
             return response()->json([
                 'success' => true,

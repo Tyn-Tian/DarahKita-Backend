@@ -9,6 +9,7 @@ use Doctrine\DBAL\Query\QueryException;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -17,13 +18,17 @@ class DonationController extends Controller
     public function getDonationsByMonth(Request $request)
     {
         try {
+            $startDate = Carbon::now()->subMonths(5)->startOfMonth();
+            $endDate = Carbon::now()->endOfMonth();
+
             $donations = Donation::select(
                 DB::raw("MONTH(date) as month"),
                 DB::raw("COUNT(*) as total_donations")
             )
+                ->whereBetween('date', [$startDate, $endDate]) 
                 ->groupBy('month')
                 ->orderBy('month', 'ASC')
-                ->get();
+                ->pluck('total_donations', 'month'); 
 
             $months = [
                 1 => 'Januari',
@@ -40,13 +45,13 @@ class DonationController extends Controller
                 12 => 'Desember'
             ];
 
-            $formattedData = [];
-
-            foreach ($donations as $donation) {
-                $formattedData[$months[$donation->month]] = [
-                    'donations' => $donation->total_donations
+            $formattedData = collect(range(5, 0))->map(function ($i) use ($donations, $months) {
+                $monthNumber = Carbon::now()->subMonths($i)->month; 
+                return [
+                    'month' => $months[$monthNumber], 
+                    'donations' => $donations[$monthNumber] ?? 0 
                 ];
-            }
+            })->values();
 
             return response()->json([
                 'success' => true,

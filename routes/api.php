@@ -24,10 +24,10 @@ Route::post('/login', [UserController::class, 'login']);
 Route::middleware('jwt.verify')->group(function () {
     Route::get('/profile', [DonorController::class, 'getProfile']);
     Route::patch('/profile', [DonorController::class, 'updateProfile']);
+    Route::get('/top-donors', [DonorController::class, 'getTopDonors']);
 
     Route::get('/blood-stocks', [BloodStockController::class, 'getBloodStocks']);
 
-    Route::get('/donations-month', [DonationController::class, 'getDonationsByMonth']);
 });
+Route::get('/donations-month', [DonationController::class, 'getDonationsByMonth']);
 
-Route::get('/top-donors', [DonorController::class, 'getTopDonors']);
