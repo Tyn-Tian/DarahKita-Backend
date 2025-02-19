@@ -16,7 +16,6 @@ class Donor extends Model
         'blood_type',
         'rhesus',
         'last_donation',
-        'blood_point',
         'user_id',
     ];
 

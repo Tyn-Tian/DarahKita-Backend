@@ -98,7 +98,47 @@ class DonorController extends Controller
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Admin tidak ditemukan.'
+                'message' => 'Data tidak ditemukan.'
+            ], 404);
+        } catch (QueryException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'error' => 'Database error: ' . $e->getMessage()
+            ], 500);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getTopDonors()
+    {
+        try {
+            $topDonors = Donor::with('user')->withCount('donations')
+                ->orderByDesc('donations_count')
+                ->limit(5)
+                ->get()
+                ->map(function ($donor) {
+                    return [
+                        'name' => $donor->user->name,
+                        'donations' => $donor->donations_count
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data pendonor berhasil diambil',
+                'data' => $topDonors
+            ]);
+        } catch (ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak ditemukan.'
             ], 404);
         } catch (QueryException $e) {
             DB::rollBack();
