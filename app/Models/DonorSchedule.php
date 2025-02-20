@@ -12,6 +12,7 @@ class DonorSchedule extends Model
     public $incrementing = false;
     public $timestamps = true;
     protected $fillable = [
+        'id',
         'date',
         'location',
         'time',

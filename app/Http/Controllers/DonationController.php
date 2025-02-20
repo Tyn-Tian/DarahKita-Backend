@@ -3,15 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Donation;
-use App\Models\Donor;
-use App\Models\User;
 use Doctrine\DBAL\Query\QueryException;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class DonationController extends Controller
 {
@@ -25,10 +22,10 @@ class DonationController extends Controller
                 DB::raw("MONTH(date) as month"),
                 DB::raw("COUNT(*) as total_donations")
             )
-                ->whereBetween('date', [$startDate, $endDate]) 
+                ->whereBetween('date', [$startDate, $endDate])
                 ->groupBy('month')
                 ->orderBy('month', 'ASC')
-                ->pluck('total_donations', 'month'); 
+                ->pluck('total_donations', 'month');
 
             $months = [
                 1 => 'Januari',
@@ -46,10 +43,10 @@ class DonationController extends Controller
             ];
 
             $formattedData = collect(range(5, 0))->map(function ($i) use ($donations, $months) {
-                $monthNumber = Carbon::now()->subMonths($i)->month; 
+                $monthNumber = Carbon::now()->subMonths($i)->month;
                 return [
-                    'month' => $months[$monthNumber], 
-                    'donations' => $donations[$monthNumber] ?? 0 
+                    'month' => $months[$monthNumber],
+                    'donations' => $donations[$monthNumber] ?? 0
                 ];
             })->values();
 
