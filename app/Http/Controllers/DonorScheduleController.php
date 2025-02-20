@@ -10,26 +10,36 @@ use Illuminate\Http\Request;
 
 class DonorScheduleController extends Controller
 {
-    public function getDonorSchedules()
+    public function getDonorSchedules(Request $request)
     {
         try {
-            $donorSchedules = DonorSchedule::with(['pmiCenter', 'pmiCenter.user'])
-                ->get()
-                ->map(function ($schedule) {
-                    return [
-                        'id' => $schedule->id,
-                        'date' => $schedule->date,
-                        'location' => $schedule->location,
-                        'time' => $schedule->time,
-                        'name' => $schedule->pmiCenter->user->name,
-                        'contact' => $schedule->pmiCenter->user->phone ?? ""
-                    ];
-                });
+            $perPage = $request->input('per_page', 5);
+            $page = $request->input('page', 1);
+
+
+            $donorSchedules = DonorSchedule::with(['pmiCenter.user'])->paginate($perPage, ['*'], 'page', $page);
+
+            $formatedData = collect($donorSchedules->items())->map(function ($schedule) {
+                return [
+                    'id' => $schedule->id,
+                    'date' => $schedule->date,
+                    'location' => $schedule->location,
+                    'time' => $schedule->time,
+                    'name' => $schedule->pmiCenter->user->name,
+                    'contact' => $schedule->pmiCenter->user->phone ?? "-"
+                ];
+            });
 
             return response()->json([
                 'success' => true,
                 'message' => 'Jadwal donor berhasil diambil',
-                'data' => $donorSchedules
+                'data' => $formatedData,
+                'pagination' => [
+                    'current_page' => $donorSchedules->currentPage(),
+                    'last_page' => $donorSchedules->lastPage(),
+                    'per_page' => $donorSchedules->perPage(),
+                    'total' => $donorSchedules->total()
+                ]
             ]);
         } catch (ModelNotFoundException $e) {
             return response()->json([
