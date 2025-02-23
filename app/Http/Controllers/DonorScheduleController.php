@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\DonorSchedule;
+use App\Models\User;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
@@ -15,9 +17,24 @@ class DonorScheduleController extends Controller
         try {
             $perPage = $request->input('per_page', 5);
             $page = $request->input('page', 1);
+            $city = $request->input('city');
 
-
-            $donorSchedules = DonorSchedule::with(['pmiCenter.user'])->paginate($perPage, ['*'], 'page', $page);
+            $donorSchedules = DonorSchedule::with(['pmiCenter.user'])
+                ->when($city, function ($query) use ($city) {
+                    $query->whereHas('pmiCenter.user', function ($query) use ($city) {
+                        $query->where('city', $city);
+                    });
+                })
+                ->where(function ($query) {
+                    $query->where('date', '>', Carbon::today())
+                        ->orWhere(function ($query) {
+                            $query->where('date', '=', Carbon::today())
+                                ->where('time', '>', Carbon::today()->format('H:i:s'));
+                        });
+                })
+                ->orderBy('date')
+                ->orderBy('time')
+                ->paginate($perPage, ['*'], 'page', $page);
 
             $formatedData = collect($donorSchedules->items())->map(function ($schedule) {
                 return [
