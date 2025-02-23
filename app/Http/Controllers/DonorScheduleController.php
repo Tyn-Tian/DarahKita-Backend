@@ -29,7 +29,7 @@ class DonorScheduleController extends Controller
                     $query->where('date', '>', Carbon::today())
                         ->orWhere(function ($query) {
                             $query->where('date', '=', Carbon::today())
-                                ->where('time', '>', Carbon::today()->format('H:i:s'));
+                                ->where('time', '>', Carbon::now('Asia/Jakarta')->format('H:i:s'));
                         });
                 })
                 ->orderBy('date')
