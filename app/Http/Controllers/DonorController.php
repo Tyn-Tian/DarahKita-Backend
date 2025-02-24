@@ -124,7 +124,7 @@ class DonorController extends Controller
                 ->get()
                 ->map(function ($donor) {
                     return [
-                        'name' => $donor->user->name,
+                        'name' => $donor->user->name ?? "",
                         'donations' => $donor->donations_count
                     ];
                 });
