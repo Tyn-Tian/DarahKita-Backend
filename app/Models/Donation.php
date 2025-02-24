@@ -17,7 +17,7 @@ class Donation extends Model
         'status',
         'donor_id',
         'donor_schedule_id',
-        'blood_stock_id',
+        'pmi_center_id',
     ];
 
     public function donorSchedule()
