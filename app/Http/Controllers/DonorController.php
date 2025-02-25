@@ -93,7 +93,7 @@ class DonorController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Profile berhasil diupdate'
-            ]);
+            ], 200);
         } catch (ModelNotFoundException $e) {
             DB::rollBack();
             return response()->json([
@@ -133,7 +133,7 @@ class DonorController extends Controller
                 'success' => true,
                 'message' => 'Data pendonor berhasil diambil',
                 'data' => $topDonors
-            ]);
+            ], 200);
         } catch (ModelNotFoundException $e) {
             DB::rollBack();
             return response()->json([

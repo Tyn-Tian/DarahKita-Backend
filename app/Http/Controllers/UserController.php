@@ -50,7 +50,7 @@ class UserController extends Controller
                     'message' => 'Email verified',
                     'token' => $jwt,
                     'user' => $user
-                ]);
+                ], 200);
             } else {
                 return response()->json(['success' => false, 'error' => 'Email not found']);
             }
@@ -134,7 +134,7 @@ class UserController extends Controller
                 'message' => 'Email verified',
                 'token' => $jwt,
                 'user' => $user
-            ]);
+            ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,

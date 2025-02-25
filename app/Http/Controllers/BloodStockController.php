@@ -35,7 +35,7 @@ class BloodStockController extends Controller
                 'success' => true,
                 'message' => 'Stok darah berhasil diambil',
                 'data' => $bloodStocks
-            ]);
+            ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,

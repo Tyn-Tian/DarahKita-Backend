@@ -54,7 +54,7 @@ class DonationController extends Controller
                 'success' => true,
                 'message' => 'Data donor berhasil diambil',
                 'data' => $formattedData
-            ]);
+            ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,

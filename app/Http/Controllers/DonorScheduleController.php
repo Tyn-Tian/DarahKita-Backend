@@ -60,7 +60,7 @@ class DonorScheduleController extends Controller
                     'per_page' => $donorSchedules->perPage(),
                     'total' => $donorSchedules->total()
                 ]
-            ]);
+            ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
@@ -121,7 +121,7 @@ class DonorScheduleController extends Controller
                 'success' => true,
                 'message' => 'Detail jadwal donor berhasil diambil',
                 'data' => $response
-            ]);
+            ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
