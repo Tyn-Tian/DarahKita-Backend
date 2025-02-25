@@ -72,4 +72,56 @@ class DonationController extends Controller
             ], 500);
         }
     }
+
+    public function getHistories(Request $request)
+    {
+        try {
+            $perPage = $request->input('per_page', 5);
+            $page = $request->input('page', 1);
+
+            $user = auth()->user();
+
+            $histories = Donation::with(['pmiCenter.user'])
+                ->where('donor_id', $user->donor->id)
+                ->orderByRaw("FIELD(status, 'pending', 'success', 'failed')")
+                ->orderBy('date', 'desc')
+                ->paginate($perPage, ['*'], 'page', $page);
+
+            $response = collect($histories->items())->map(function ($history) {
+                return [
+                    'id' => $history->id,
+                    'date' => $history->date,
+                    'status' => $history->status,
+                    'pmi' => $history->pmiCenter->user->name
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'History donor darah berhasil diambil',
+                'data' => $response,
+                'pagination' => [
+                    'current_page' => $histories->currentPage(),
+                    'last_page' => $histories->lastPage(),
+                    'per_page' => $histories->perPage(),
+                    'total' => $histories->total()
+                ]
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak ditemukan.'
+            ], 404);
+        } catch (QueryException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Database error: ' . $e->getMessage()
+            ], 500);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

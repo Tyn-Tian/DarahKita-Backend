@@ -30,6 +30,7 @@ Route::middleware('jwt.verify')->group(function () {
     Route::get('/blood-stocks', [BloodStockController::class, 'getBloodStocks']);
 
     Route::get('/donations-month', [DonationController::class, 'getDonationsByMonth']);
+    Route::get('/histories', [DonationController::class, 'getHistories']);
 
     Route::get('/donor-schedules', [DonorScheduleController::class, 'getDonorSchedules']);
     Route::get('/donor-schedules/{id}', [DonorScheduleController::class, 'getDonorScheduleDetail']);
