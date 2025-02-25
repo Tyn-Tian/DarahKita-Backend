@@ -118,7 +118,9 @@ class DonorController extends Controller
     public function getTopDonors()
     {
         try {
-            $topDonors = Donor::with('user')->withCount('donations')
+            $topDonors = Donor::with('user')->withCount(['donations' => function ($query) {
+                $query->where('status', 'success');
+            }])
                 ->orderByDesc('donations_count')
                 ->limit(5)
                 ->get()
