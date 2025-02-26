@@ -78,11 +78,15 @@ class DonationController extends Controller
         try {
             $perPage = $request->input('per_page', 5);
             $page = $request->input('page', 1);
+            $status = $request->input('status');
 
             $user = auth()->user();
 
-            $histories = Donation::with(['pmiCenter.user'])
+            $histories = Donation::with(['pmiCenter.user', 'donorSchedule'])
                 ->where('donor_id', $user->donor->id)
+                ->when($status && $status !== 'semua', function ($query) use ($status) {
+                    $query->where('status', $status);
+                })
                 ->orderByRaw("FIELD(status, 'pending', 'success', 'failed')")
                 ->orderBy('date', 'desc')
                 ->paginate($perPage, ['*'], 'page', $page);
@@ -91,6 +95,7 @@ class DonationController extends Controller
                 return [
                     'id' => $history->id,
                     'date' => $history->date,
+                    'location' => $history->donorSchedule->location ?? $history->pmiCenter->location ?? '-',
                     'status' => $history->status,
                     'pmi' => $history->pmiCenter->user->name
                 ];
