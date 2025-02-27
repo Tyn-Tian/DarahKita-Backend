@@ -165,6 +165,7 @@ class DonorScheduleController extends Controller
             Donation::create([
                 'id' => Str::uuid(),
                 'date' => $donorSchedule->date,
+                'time' => $donorSchedule->time,
                 'status' => 'pending',
                 'donor_id' => $user->donor->id,
                 'donor_schedule_id' => $donorSchedule->id,

@@ -31,6 +31,7 @@ Route::middleware('jwt.verify')->group(function () {
 
     Route::get('/donations-month', [DonationController::class, 'getDonationsByMonth']);
     Route::get('/histories', [DonationController::class, 'getHistories']);
+    Route::get('/histories/{id}', [DonationController::class, 'getHistoryDetail']);
 
     Route::get('/donor-schedules', [DonorScheduleController::class, 'getDonorSchedules']);
     Route::get('/donor-schedules/{id}', [DonorScheduleController::class, 'getDonorScheduleDetail']);

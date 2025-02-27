@@ -95,9 +95,11 @@ class DonationController extends Controller
                 return [
                     'id' => $history->id,
                     'date' => $history->date,
+                    'time' => $history->time,
                     'location' => $history->donorSchedule->location ?? $history->pmiCenter->location ?? '-',
                     'status' => $history->status,
-                    'pmi' => $history->pmiCenter->user->name
+                    'pmi' => $history->pmiCenter->user->name ?? '-',
+                    'contact' => $history->pmiCenter->user->phone ?? '-'
                 ];
             });
 
@@ -112,6 +114,47 @@ class DonationController extends Controller
                     'total' => $histories->total()
                 ]
             ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak ditemukan.'
+            ], 404);
+        } catch (QueryException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Database error: ' . $e->getMessage()
+            ], 500);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getHistoryDetail(Request $request, string $id)
+    {
+        try {
+            $user = auth()->user();
+            $history = Donation::with(['pmiCenter.user', 'donorSchedule'])
+                ->where('donor_id', $user->donor->id)
+                ->findOrFail($id);
+
+            $response = [
+                'id' => $history->id,
+                'date' => $history->date,
+                'time' => $history->time,
+                'location' => $history->donorSchedule->location ?? $history->pmiCenter->location ?? '-',
+                'status' => $history->status,
+                'pmi' => $history->pmiCenter->user->name,
+                'contact' => $history->pmiCenter->user->phone
+            ];
+
+            return response()->json([
+                'success' => true,
+                'message' => 'History donor darah berhasil diambil',
+                'data' => $response
+            ]);
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
