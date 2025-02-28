@@ -118,8 +118,16 @@ class DonorController extends Controller
     public function getTopDonors()
     {
         try {
-            $topDonors = Donor::with('user')->withCount(['donations' => function ($query) {
+            $user = auth()->user();
+
+            $topDonors = Donor::with('user')->withCount(['donations' => function ($query) use ($user) {
                 $query->where('status', 'success');
+
+                if ($user->role == 'pmi') {
+                    $query->whereHas('pmiCenter.user', function ($query) use ($user) {
+                        $query->where('city', $user->city);
+                    });
+                }
             }])
                 ->orderByDesc('donations_count')
                 ->limit(5)

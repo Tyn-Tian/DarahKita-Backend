@@ -18,11 +18,18 @@ class DonationController extends Controller
             $startDate = Carbon::now()->subMonths(5)->startOfMonth();
             $endDate = Carbon::now()->endOfMonth();
 
+            $user = auth()->user();
+
             $donations = Donation::select(
-                DB::raw("MONTH(date) as month"),
+                DB::raw("MONTH(donations.date) as month"),
                 DB::raw("COUNT(*) as total_donations")
             )
-                ->whereBetween('date', [$startDate, $endDate])
+                ->join('pmi_centers', 'donations.pmi_center_id', '=', 'pmi_centers.id')
+                ->join('users', 'pmi_centers.user_id', '=', 'users.id')
+                ->when($user->role == 'pmi', function ($query) use ($user) {
+                    return $query->where('users.city', $user->city);
+                })
+                ->whereBetween('donations.date', [$startDate, $endDate])
                 ->groupBy('month')
                 ->orderBy('month', 'ASC')
                 ->pluck('total_donations', 'month');
