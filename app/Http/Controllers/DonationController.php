@@ -103,7 +103,7 @@ class DonationController extends Controller
                     'id' => $history->id,
                     'date' => $history->date,
                     'time' => $history->time,
-                    'location' => $history->donorSchedule->location ?? $history->pmiCenter->location ?? '-',
+                    'location' => $history->donorSchedule->location ?? $history->pmiCenter->user->address ?? '-',
                     'status' => $history->status,
                     'pmi' => $history->pmiCenter->user->name ?? '-',
                     'contact' => $history->pmiCenter->user->phone ?? '-'
@@ -151,7 +151,7 @@ class DonationController extends Controller
                 'id' => $history->id,
                 'date' => $history->date,
                 'time' => $history->time,
-                'location' => $history->donorSchedule->location ?? $history->pmiCenter->location ?? '-',
+                'location' => $history->donorSchedule->location ?? $history->pmiCenter->user->address ?? '-',
                 'status' => $history->status,
                 'pmi' => $history->pmiCenter->user->name,
                 'contact' => $history->pmiCenter->user->phone

@@ -4,6 +4,7 @@ use App\Http\Controllers\BloodStockController;
 use App\Http\Controllers\DonationController;
 use App\Http\Controllers\DonorController;
 use App\Http\Controllers\DonorScheduleController;
+use App\Http\Controllers\PmiCenterController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -26,6 +27,9 @@ Route::middleware('jwt.verify')->group(function () {
     Route::get('/profile', [DonorController::class, 'getProfile']);
     Route::patch('/profile', [DonorController::class, 'updateProfile']);
     Route::get('/top-donors', [DonorController::class, 'getTopDonors']);
+
+    Route::get('/pmi-profile', [PmiCenterController::class, 'getPmiProfile']);
+    Route::patch('/pmi-profile', [PmiCenterController::class, 'updatePmiProfile']);
 
     Route::get('/blood-stocks', [BloodStockController::class, 'getBloodStocks']);
 
