@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class DonorScheduleController extends Controller
@@ -21,8 +22,12 @@ class DonorScheduleController extends Controller
             $perPage = $request->input('per_page', 5);
             $page = $request->input('page', 1);
             $city = $request->input('city');
+            $isPmi = auth()->user()->pmiCenter;
 
             $donorSchedules = DonorSchedule::with(['pmiCenter.user'])
+                ->when($isPmi, function ($query) use ($isPmi) {
+                    $query->where('pmi_center_id', $isPmi->id);
+                })
                 ->when($city, function ($query) use ($city) {
                     $query->whereHas('pmiCenter.user', function ($query) use ($city) {
                         $query->where('city', $city);
@@ -85,37 +90,50 @@ class DonorScheduleController extends Controller
             $user = auth()->user();
             $donorSchedule = DonorSchedule::with(['pmiCenter.user'])
                 ->findOrFail($id);
-            $isDonor = false;
-            $lastDonation = $user->donor->last_donation;
-            $isScheduleRegistered = Donation::where('donor_id', $user->donor->id)
-                ->where('status', 'pending')
-                ->where('donor_schedule_id', $id)
-                ->exists();
-            $isRegistered = Donation::where('donor_id', $user->donor->id)
-                ->where('status', 'pending')
-                ->exists();
+            $isPmi = $user->pmiCenter;
 
-            if (
-                !$lastDonation ||
-                Carbon::parse($lastDonation)->diffInMonths($donorSchedule->date) >= 4 &&
-                !$isScheduleRegistered &&
-                !$isRegistered
-            ) {
-                $isDonor = true;
+            if ($isPmi) {
+                $response = [
+                    'id' => $donorSchedule->id,
+                    'date' => $donorSchedule->date,
+                    'location' => $donorSchedule->location,
+                    'time' => $donorSchedule->time,
+                    'name' => $donorSchedule->pmiCenter->user->name,
+                    'contact' => $donorSchedule->pmiCenter->user->phone,
+                ];
+            } else {
+                $isDonor = false;
+                $lastDonation = $user->donor->last_donation;
+                $isScheduleRegistered = Donation::where('donor_id', $user->donor->id)
+                    ->where('status', 'pending')
+                    ->where('donor_schedule_id', $id)
+                    ->exists();
+                $isRegistered = Donation::where('donor_id', $user->donor->id)
+                    ->where('status', 'pending')
+                    ->exists();
+
+                if (
+                    !$lastDonation ||
+                    Carbon::parse($lastDonation)->diffInMonths($donorSchedule->date) >= 4 &&
+                    !$isScheduleRegistered &&
+                    !$isRegistered
+                ) {
+                    $isDonor = true;
+                }
+
+                $response = [
+                    'id' => $donorSchedule->id,
+                    'date' => $donorSchedule->date,
+                    'location' => $donorSchedule->location,
+                    'time' => $donorSchedule->time,
+                    'name' => $donorSchedule->pmiCenter->user->name,
+                    'contact' => $donorSchedule->pmiCenter->user->phone,
+                    'lastDonation' => $lastDonation,
+                    'isDonor' => $isDonor,
+                    'isScheduleRegistered' => $isScheduleRegistered,
+                    'isRegistered' => $isRegistered
+                ];
             }
-
-            $response = [
-                'id' => $donorSchedule->id,
-                'date' => $donorSchedule->date,
-                'location' => $donorSchedule->location,
-                'time' => $donorSchedule->time,
-                'name' => $donorSchedule->pmiCenter->user->name,
-                'contact' => $donorSchedule->pmiCenter->user->phone,
-                'lastDonation' => $lastDonation,
-                'isDonor' => $isDonor,
-                'isScheduleRegistered' => $isScheduleRegistered,
-                'isRegistered' => $isRegistered
-            ];
 
             return response()->json([
                 'success' => true,
@@ -176,6 +194,61 @@ class DonorScheduleController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Daftar jadwal donor darah berhasil',
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak ditemukan.'
+            ], 404);
+        } catch (QueryException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'error' => 'Database error: ' . $e->getMessage()
+            ], 500);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function postUpdateDonorSchedule(Request $request, string $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'date' => 'sometimes|string',
+            'location' => 'sometimes|string',
+            'time' => 'sometimes|string' 
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $validatedData = $validator->validated();
+            $user = auth()->user();
+            $donorSchedule = DonorSchedule::where('pmi_center_id', $user->pmiCenter->id)
+                ->findOrFail($id);
+
+            $donorSchedule->update([
+                'date' => $validatedData['date'],
+                'location' => $validatedData['location'],
+                'time' => $validatedData['time']
+            ]);
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Jadwal Donor berhasil diupdate'
             ], 200);
         } catch (ModelNotFoundException $e) {
             DB::rollBack();
