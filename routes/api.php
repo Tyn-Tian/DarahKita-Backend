@@ -35,7 +35,8 @@ Route::middleware('jwt.verify')->group(function () {
         Route::get('/pmi-profile', [PmiCenterController::class, 'getPmiProfile']);
         Route::patch('/pmi-profile', [PmiCenterController::class, 'updatePmiProfile']);
 
-        Route::patch('/donor-schedules/{id}', [DonorScheduleController::class, 'postUpdateDonorSchedule']);
+        Route::post('/donor-schedules', [DonorScheduleController::class, 'postCreateDonorSchedule']);
+        Route::patch('/donor-schedules/{id}', [DonorScheduleController::class, 'patchUpdateDonorSchedule']);
     });
 
     Route::get('/top-donors', [DonorController::class, 'getTopDonors']);

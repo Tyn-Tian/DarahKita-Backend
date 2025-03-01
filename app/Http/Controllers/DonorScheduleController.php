@@ -216,12 +216,12 @@ class DonorScheduleController extends Controller
         }
     }
 
-    public function postUpdateDonorSchedule(Request $request, string $id)
+    public function patchUpdateDonorSchedule(Request $request, string $id)
     {
         $validator = Validator::make($request->all(), [
             'date' => 'sometimes|string',
             'location' => 'sometimes|string',
-            'time' => 'sometimes|string' 
+            'time' => 'sometimes|string'
         ]);
 
         if ($validator->fails()) {
@@ -250,6 +250,59 @@ class DonorScheduleController extends Controller
                 'success' => true,
                 'message' => 'Jadwal Donor berhasil diupdate'
             ], 200);
+        } catch (ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak ditemukan.'
+            ], 404);
+        } catch (QueryException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'error' => 'Database error: ' . $e->getMessage()
+            ], 500);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function postCreateDonorSchedule(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'date' => 'required|string',
+            'location' => 'required|string',
+            'time' => 'required|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $validatedData = $validator->validated();
+            DonorSchedule::create([
+                'id' => Str::uuid(),
+                'date' => $validatedData['date'],
+                'location' => $validatedData['location'],
+                'time' => $validatedData['time'],
+                'pmi_center_id' => auth()->user()->pmiCenter->id
+            ]);
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Jadwal donor berhasil dibuat'
+            ], 201);
         } catch (ModelNotFoundException $e) {
             DB::rollBack();
             return response()->json([
