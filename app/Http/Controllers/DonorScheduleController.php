@@ -22,11 +22,11 @@ class DonorScheduleController extends Controller
             $perPage = $request->input('per_page', 5);
             $page = $request->input('page', 1);
             $city = $request->input('city');
-            $isPmi = auth()->user()->pmiCenter;
+            $pmi = auth()->user()->pmiCenter;
 
             $donorSchedules = DonorSchedule::with(['pmiCenter.user'])
-                ->when($isPmi, function ($query) use ($isPmi) {
-                    $query->where('pmi_center_id', $isPmi->id);
+                ->when($pmi, function ($query) use ($pmi) {
+                    $query->where('pmi_center_id', $pmi->id);
                 })
                 ->when($city, function ($query) use ($city) {
                     $query->whereHas('pmiCenter.user', function ($query) use ($city) {
@@ -317,6 +317,58 @@ class DonorScheduleController extends Controller
             ], 500);
         } catch (Exception $e) {
             DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getDonorScheduleParticipants(Request $request, string $id)
+    {
+        try {
+            $perPage = $request->input('per_page', 5);
+            $page = $request->input('page', 1);
+
+            $donorScheduleParticipants = Donation::with(['donor.user'])
+                ->where('donor_schedule_id', $id)
+                ->where('pmi_center_id', auth()->user()->pmiCenter->id)
+                ->paginate($perPage, ['*'], 'page', $page);
+
+            $responses = collect($donorScheduleParticipants->items())->map(function ($participant) {
+                return [
+                    'id' => $participant->donor->id,
+                    'name' => $participant->donor->user->name,
+                    'status' => $participant->status,
+                    'contact' => $participant->donor->user->phone,
+                    'blood' => $participant->donor->blood_type,
+                    'rhesus' => $participant->donor->rhesus,
+                    'last_donation' => $participant->donor->last_donation ?? '-'
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Jadwal donor berhasil diambil',
+                'data' => $responses,
+                'pagination' => [
+                    'current_page' => $donorScheduleParticipants->currentPage(),
+                    'last_page' => $donorScheduleParticipants->lastPage(),
+                    'per_page' => $donorScheduleParticipants->perPage(),
+                    'total' => $donorScheduleParticipants->total()
+                ]
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak ditemukan.'
+            ], 404);
+        } catch (QueryException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Database error: ' . $e->getMessage()
+            ], 500);
+        } catch (Exception $e) {
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage()
