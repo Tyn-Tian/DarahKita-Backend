@@ -329,9 +329,14 @@ class DonorScheduleController extends Controller
         try {
             $perPage = $request->input('per_page', 5);
             $page = $request->input('page', 1);
+            $status = $request->input('status');
 
             $donorScheduleParticipants = Donation::with(['donor.user'])
                 ->where('donor_schedule_id', $id)
+                ->when($status && $status !== 'semua', function ($query) use ($status) {
+                    $query->where('status', $status);
+                })
+                ->orderByRaw("FIELD(status, 'pending', 'success', 'failed')")
                 ->where('pmi_center_id', auth()->user()->pmiCenter->id)
                 ->paginate($perPage, ['*'], 'page', $page);
 
