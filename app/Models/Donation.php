@@ -13,12 +13,10 @@ class Donation extends Model
     public $timestamps = true;
     protected $fillable = [
         'id',
-        'date',
         'status',
         'donor_id',
         'donor_schedule_id',
         'pmi_center_id',
-        'time',
         'physical_id'
     ];
 

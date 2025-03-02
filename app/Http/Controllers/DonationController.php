@@ -96,14 +96,17 @@ class DonationController extends Controller
                     $query->where('status', $status);
                 })
                 ->orderByRaw("FIELD(status, 'pending', 'success', 'failed')")
-                ->orderBy('date', 'desc')
+                ->whereHas('donorSchedule', function ($query) {
+                    $query->orderByDesc('date')
+                        ->orderByDesc('time');
+                })
                 ->paginate($perPage, ['*'], 'page', $page);
 
             $response = collect($histories->items())->map(function ($history) {
                 return [
                     'id' => $history->id,
-                    'date' => $history->date,
-                    'time' => $history->time,
+                    'date' => $history->donorSchedule->date,
+                    'time' => $history->donorSchedule->time,
                     'location' => $history->donorSchedule->location ?? $history->pmiCenter->user->address ?? '-',
                     'status' => $history->status,
                     'pmi' => $history->pmiCenter->user->name ?? '-',
@@ -150,8 +153,8 @@ class DonationController extends Controller
 
             $response = [
                 'id' => $history->id,
-                'date' => $history->date,
-                'time' => $history->time,
+                'date' => $history->donorSchedule->date,
+                'time' => $history->donorSchedule->time,
                 'location' => $history->donorSchedule->location ?? $history->pmiCenter->user->address ?? '-',
                 'status' => $history->status,
                 'pmi' => $history->pmiCenter->user->name,
