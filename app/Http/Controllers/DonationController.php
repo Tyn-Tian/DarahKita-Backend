@@ -29,6 +29,7 @@ class DonationController extends Controller
                 ->when($user->role == 'pmi', function ($query) use ($user) {
                     return $query->where('users.city', $user->city);
                 })
+                ->where('donations.status', 'success')
                 ->whereBetween('donations.date', [$startDate, $endDate])
                 ->groupBy('month')
                 ->orderBy('month', 'ASC')
