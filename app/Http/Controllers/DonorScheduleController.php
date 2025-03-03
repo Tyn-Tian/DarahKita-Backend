@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BloodStock;
 use App\Models\Donation;
 use App\Models\Donor;
 use App\Models\DonorSchedule;
@@ -459,6 +460,7 @@ class DonorScheduleController extends Controller
             DB::beginTransaction();
 
             $validatedData = $validator->validated();
+            $pmiCenterId = auth()->user()->pmiCenter->id;
 
             $donor = Donor::findOrFail($donorId);
             $donor->update([
@@ -466,7 +468,7 @@ class DonorScheduleController extends Controller
                 'rhesus' => $validatedData['rhesus']
             ]);
 
-            $donation = Donation::where('pmi_center_id', auth()->user()->pmiCenter->id)
+            $donation = Donation::where('pmi_center_id', $pmiCenterId)
                 ->where('donor_id', $donorId)
                 ->firstOrFail();
 
@@ -489,6 +491,15 @@ class DonorScheduleController extends Controller
                 'weight' => $validatedData['weight'],
                 'temperatur' => $validatedData['temperatur'],
                 'hemoglobin' => $validatedData['hemoglobin'],
+            ]);
+
+            $bloodStock = BloodStock::where('blood_type', $validatedData['blood'])
+                ->where('rhesus', $validatedData['rhesus'])
+                ->where('pmi_center_id', $pmiCenterId)
+                ->firstOrFail();
+
+            $bloodStock->update([
+                'quantity' => $bloodStock->quantity + 1
             ]);
 
             DB::commit();
