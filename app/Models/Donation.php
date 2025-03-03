@@ -34,4 +34,9 @@ class Donation extends Model
     {
         return $this->belongsTo(PmiCenter::class);
     }
+
+    public function physical()
+    {
+        return $this->hasOne(Physical::class, 'id', 'physical_id');
+    }
 }

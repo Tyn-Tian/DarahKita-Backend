@@ -38,6 +38,8 @@ Route::middleware('jwt.verify')->group(function () {
         Route::post('/donor-schedules', [DonorScheduleController::class, 'postCreateDonorSchedule']);
         Route::patch('/donor-schedules/{id}', [DonorScheduleController::class, 'patchUpdateDonorSchedule']);
         Route::get('/donor-schedules/{id}/participants', [DonorScheduleController::class, 'getDonorScheduleParticipants']);
+        Route::get('/donor-schedules/{id}/participants/{donorId}', [DonorScheduleController::class, 'getDonorScheduleParticipantDetail']);
+        Route::post('/donor-schedules/{id}/participants/{donorId}', [DonorScheduleController::class, 'postUpdateStatusParticipant']);
     });
 
     Route::get('/top-donors', [DonorController::class, 'getTopDonors']);

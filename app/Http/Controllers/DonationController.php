@@ -21,16 +21,17 @@ class DonationController extends Controller
             $user = auth()->user();
 
             $donations = Donation::select(
-                DB::raw("MONTH(donations.date) as month"),
+                DB::raw("MONTH(donor_schedules.date) as month"),
                 DB::raw("COUNT(*) as total_donations")
             )
+                ->join('donor_schedules', 'donations.donor_schedule_id', '=', 'donor_schedules.id')
                 ->join('pmi_centers', 'donations.pmi_center_id', '=', 'pmi_centers.id')
                 ->join('users', 'pmi_centers.user_id', '=', 'users.id')
                 ->when($user->role == 'pmi', function ($query) use ($user) {
                     return $query->where('users.city', $user->city);
                 })
                 ->where('donations.status', 'success')
-                ->whereBetween('donations.date', [$startDate, $endDate])
+                ->whereBetween('donor_schedules.date', [$startDate, $endDate])
                 ->groupBy('month')
                 ->orderBy('month', 'ASC')
                 ->pluck('total_donations', 'month');
