@@ -464,7 +464,7 @@ class DonorScheduleController extends Controller
 
             $donor = Donor::findOrFail($donorId);
             $donor->update([
-                'blood' => $validatedData['blood'],
+                'blood_type' => $validatedData['blood'],
                 'rhesus' => $validatedData['rhesus']
             ]);
 
@@ -493,20 +493,144 @@ class DonorScheduleController extends Controller
                 'hemoglobin' => $validatedData['hemoglobin'],
             ]);
 
-            $bloodStock = BloodStock::where('blood_type', $validatedData['blood'])
-                ->where('rhesus', $validatedData['rhesus'])
-                ->where('pmi_center_id', $pmiCenterId)
-                ->firstOrFail();
+            if ($validatedData['worthy']) {
+                $bloodStock = BloodStock::where('blood_type', $validatedData['blood'])
+                    ->where('rhesus', $validatedData['rhesus'])
+                    ->where('pmi_center_id', $pmiCenterId)
+                    ->firstOrFail();
 
-            $bloodStock->update([
-                'quantity' => $bloodStock->quantity + 1
-            ]);
+                $bloodStock->update([
+                    'quantity' => $bloodStock->quantity + 1
+                ]);
+
+                $donor->update([
+                    'last_donation' => now()
+                ]);
+            }
 
             DB::commit();
             return response()->json([
                 'success' => true,
                 'message' => 'Update status peserta berhasil',
             ], 200);
+        } catch (ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak ditemukan.'
+            ], 404);
+        } catch (QueryException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'error' => 'Database error: ' . $e->getMessage()
+            ], 500);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function postAddParticipant(Request $request, string $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'name' => 'required|string',
+            'blood' => 'required|string',
+            'rhesus' => 'required|string',
+            'systolic' => 'required|string',
+            'diastolic' => 'required|string',
+            'pulse' => 'required|string',
+            'weight' => 'required|string',
+            'temperatur' => 'required|string',
+            'hemoglobin' => 'required|string',
+            'worthy' => 'required|boolean'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $validatedData = $validator->validated();
+            $donorUser = User::where('email', $validatedData['email'])->first();
+            $pmiCenterId = auth()->user()->pmiCenter->id;
+
+            if ($donorUser && $donorUser->role === 'pmi') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ini adalah akun resmi PMI'
+                ], 400);
+            }
+
+            if (!$donorUser) {
+                $donorUser = User::create([
+                    'id' => Str::uuid(),
+                    'name' => $validatedData['name'],
+                    'email' => $validatedData['email'],
+                    'role' => 'donor'
+                ]);
+
+                $donor = Donor::create([
+                    'id' => Str::uuid(),
+                    'blood_type' => $validatedData['blood'],
+                    'rhesus' => $validatedData['rhesus'],
+                    'user_id' => $donorUser->id
+                ]);
+            }
+            $donor = Donor::where('user_id', $donorUser->id)->firstOrFail();
+            $donor->update([
+                'blood_type' => $validatedData['blood'],
+                'rhesus' => $validatedData['rhesus']
+            ]);
+
+            $physical = Physical::create([
+                'id' => Str::uuid(),
+                'systolic' => $validatedData['systolic'],
+                'diastolic' => $validatedData['diastolic'],
+                'pulse' => $validatedData['pulse'],
+                'weight' => $validatedData['weight'],
+                'temperatur' => $validatedData['temperatur'],
+                'hemoglobin' => $validatedData['hemoglobin'],
+            ]);
+
+            Donation::create([
+                'id' => Str::uuid(),
+                'status' => $validatedData['worthy'] ? 'success' : 'pending',
+                'donor_id' => $donor->id,
+                'donor_schedule_id' => $id,
+                'pmi_center_id' => $pmiCenterId,
+                'physical_id' => $physical->id
+            ]);
+
+            if ($validatedData['worthy']) {
+                $bloodStock = BloodStock::where('blood_type', $validatedData['blood'])
+                    ->where('rhesus', $validatedData['rhesus'])
+                    ->where('pmi_center_id', $pmiCenterId)
+                    ->firstOrFail();
+
+                $bloodStock->update([
+                    'quantity' => $bloodStock->quantity + 1
+                ]);
+
+                $donor->update([
+                    'last_donation' => now()
+                ]);
+            }
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Peserta berhasil ditambahkan'
+            ], 201);
         } catch (ModelNotFoundException $e) {
             DB::rollBack();
             return response()->json([
