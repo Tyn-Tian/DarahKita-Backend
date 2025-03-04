@@ -41,6 +41,8 @@ Route::middleware('jwt.verify')->group(function () {
         Route::post('/donor-schedules/{id}/participants', [DonorScheduleController::class, 'postAddParticipant']);
         Route::get('/donor-schedules/{id}/participants/{donorId}', [DonorScheduleController::class, 'getDonorScheduleParticipantDetail']);
         Route::post('/donor-schedules/{id}/participants/{donorId}', [DonorScheduleController::class, 'postUpdateStatusParticipant']);
+
+        Route::post('/donors', [DonationController::class, 'postAddDonor']);
     });
 
     Route::get('/top-donors', [DonorController::class, 'getTopDonors']);

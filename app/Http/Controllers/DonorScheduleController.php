@@ -604,7 +604,7 @@ class DonorScheduleController extends Controller
 
             Donation::create([
                 'id' => Str::uuid(),
-                'status' => $validatedData['worthy'] ? 'success' : 'pending',
+                'status' => $validatedData['worthy'] ? 'success' : 'failed',
                 'donor_id' => $donor->id,
                 'donor_schedule_id' => $id,
                 'pmi_center_id' => $pmiCenterId,

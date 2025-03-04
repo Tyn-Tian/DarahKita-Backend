@@ -2,13 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BloodStock;
 use App\Models\Donation;
+use App\Models\Donor;
+use App\Models\Physical;
+use App\Models\User;
 use Doctrine\DBAL\Query\QueryException;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class DonationController extends Controller
 {
@@ -92,7 +98,7 @@ class DonationController extends Controller
             $user = auth()->user();
             $isPmi = $user->role === 'pmi';
 
-            $histories = Donation::with(['pmiCenter.user', 'donorSchedule'])
+            $histories = Donation::with(['pmiCenter.user'])
                 ->when($isPmi, function ($query) use ($user) {
                     $query->where('pmi_center_id', $user->pmiCenter->id);
                 })
@@ -103,18 +109,19 @@ class DonationController extends Controller
                     $query->where('status', $status);
                 })
                 ->orderByRaw("FIELD(status, 'pending', 'success', 'failed')")
-                ->whereHas('donorSchedule', function ($query) {
-                    $query->orderByDesc('date')
-                        ->orderByDesc('time');
-                })
+                ->with(['donorSchedule' => function ($query) {
+                    $query->orderByDesc('date')->orderByDesc('time');
+                }])
                 ->paginate($perPage, ['*'], 'page', $page);
 
             $response = collect($histories->items())->map(function ($history) {
                 return [
                     'id' => $history->id,
-                    'date' => $history->donorSchedule->date,
-                    'time' => $history->donorSchedule->time,
-                    'location' => $history->donorSchedule->location ?? $history->pmiCenter->user->address ?? '-',
+                    'date' => $history->donorSchedule->date ?? $history->created_at->format('Y-m-d'),
+                    'time' => $history->donorSchedule->time ?? $history->created_at->format('H:i:s'),
+                    'location' => $history->donorSchedule->location
+                        ?? $history->pmiCenter->user->address
+                        ?? 'Lokasi tidak tersedia',
                     'status' => $history->status,
                     'pmi' => $history->pmiCenter->user->name ?? '-',
                     'contact' => $history->pmiCenter->user->phone ?? '-'
@@ -168,8 +175,8 @@ class DonationController extends Controller
 
             $response = [
                 'id' => $history->id,
-                'date' => $history->donorSchedule->date,
-                'time' => $history->donorSchedule->time,
+                'date' => $history->donorSchedule->date ?? $history->created_at->format('Y-m-d'),
+                'time' => $history->donorSchedule->time ?? $history->created_at->format('H:i:s'),
                 'location' => $history->donorSchedule->location ?? $history->pmiCenter->user->address ?? '-',
                 'status' => $history->status,
                 'pmi' => $history->pmiCenter->user->name,
@@ -200,6 +207,123 @@ class DonationController extends Controller
                 'error' => 'Database error: ' . $e->getMessage()
             ], 500);
         } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function postAddDonor(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'name' => 'required|string',
+            'blood' => 'required|string',
+            'rhesus' => 'required|string',
+            'systolic' => 'required|string',
+            'diastolic' => 'required|string',
+            'pulse' => 'required|string',
+            'weight' => 'required|string',
+            'temperatur' => 'required|string',
+            'hemoglobin' => 'required|string',
+            'worthy' => 'required|boolean'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $validatedData = $validator->validated();
+            $donorUser = User::where('email', $validatedData['email'])->first();
+            $pmiCenterId = auth()->user()->pmiCenter->id;
+
+            if ($donorUser && $donorUser->role === 'pmi') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ini adalah akun resmi PMI'
+                ], 400);
+            }
+
+            if (!$donorUser) {
+                $donorUser = User::create([
+                    'id' => Str::uuid(),
+                    'name' => $validatedData['name'],
+                    'email' => $validatedData['email'],
+                    'role' => 'donor'
+                ]);
+
+                $donor = Donor::create([
+                    'id' => Str::uuid(),
+                    'blood_type' => $validatedData['blood'],
+                    'rhesus' => $validatedData['rhesus'],
+                    'user_id' => $donorUser->id
+                ]);
+            }
+            $donor = Donor::where('user_id', $donorUser->id)->firstOrFail();
+            $donor->update([
+                'blood_type' => $validatedData['blood'],
+                'rhesus' => $validatedData['rhesus']
+            ]);
+
+            $physical = Physical::create([
+                'id' => Str::uuid(),
+                'systolic' => $validatedData['systolic'],
+                'diastolic' => $validatedData['diastolic'],
+                'pulse' => $validatedData['pulse'],
+                'weight' => $validatedData['weight'],
+                'temperatur' => $validatedData['temperatur'],
+                'hemoglobin' => $validatedData['hemoglobin'],
+            ]);
+
+            Donation::create([
+                'id' => Str::uuid(),
+                'status' => $validatedData['worthy'] ? 'success' : 'failed',
+                'donor_id' => $donor->id,
+                'pmi_center_id' => $pmiCenterId,
+                'physical_id' => $physical->id
+            ]);
+
+            if ($validatedData['worthy']) {
+                $bloodStock = BloodStock::where('blood_type', $validatedData['blood'])
+                    ->where('rhesus', $validatedData['rhesus'])
+                    ->where('pmi_center_id', $pmiCenterId)
+                    ->firstOrFail();
+
+                $bloodStock->update([
+                    'quantity' => $bloodStock->quantity + 1
+                ]);
+
+                $donor->update([
+                    'last_donation' => now()
+                ]);
+            }
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Peserta berhasil ditambahkan'
+            ], 201);
+        } catch (ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak ditemukan.'
+            ], 404);
+        } catch (QueryException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'error' => 'Database error: ' . $e->getMessage()
+            ], 500);
+        } catch (Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage()
