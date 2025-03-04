@@ -148,7 +148,7 @@ class DonationController extends Controller
     {
         try {
             $user = auth()->user();
-            $history = Donation::with(['pmiCenter.user', 'donorSchedule'])
+            $history = Donation::with(['pmiCenter.user', 'donorSchedule', 'physical', 'donor'])
                 ->where('donor_id', $user->donor->id)
                 ->findOrFail($id);
 
@@ -159,7 +159,15 @@ class DonationController extends Controller
                 'location' => $history->donorSchedule->location ?? $history->pmiCenter->user->address ?? '-',
                 'status' => $history->status,
                 'pmi' => $history->pmiCenter->user->name,
-                'contact' => $history->pmiCenter->user->phone
+                'contact' => $history->pmiCenter->user->phone,
+                'blood' => $history->donor->blood_type,
+                'rhesus' => $history->donor->rhesus,
+                'systolic' => $history->physical->systolic,
+                'diastolic' => $history->physical->diastolic,
+                'pulse' => $history->physical->pulse,
+                'weight' => $history->physical->weight,
+                'temperatur' => $history->physical->temperatur,
+                'hemoglobin' => $history->physical->hemoglobin,
             ];
 
             return response()->json([
