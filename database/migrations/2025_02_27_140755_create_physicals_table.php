@@ -15,12 +15,12 @@ class CreatePhysicalsTable extends Migration
     {
         Schema::create('physicals', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->integer('systolic')->nullable();
-            $table->integer('diastolic')->nullable();
-            $table->integer('pulse')->nullable();
-            $table->integer('weight')->nullable();
-            $table->integer('temperatur')->nullable();
-            $table->integer('hemoglobin')->nullable();
+            $table->float('systolic')->nullable();
+            $table->float('diastolic')->nullable();
+            $table->float('pulse')->nullable();
+            $table->float('weight')->nullable();
+            $table->float('temperatur')->nullable();
+            $table->float('hemoglobin')->nullable();
         });
     }
 

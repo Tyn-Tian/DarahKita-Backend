@@ -25,25 +25,27 @@ class DonorScheduleController extends Controller
             $perPage = $request->input('per_page', 5);
             $page = $request->input('page', 1);
             $city = $request->input('city');
-            $pmi = auth()->user()->pmiCenter;
+            $isPmi = auth()->user()->role === 'pmi';
 
             $donorSchedules = DonorSchedule::with(['pmiCenter.user'])
-                ->when($pmi, function ($query) use ($pmi) {
-                    $query->where('pmi_center_id', $pmi->id);
+                ->when($isPmi, function ($query) {
+                    $query->where('pmi_center_id', auth()->user()->pmiCenter->id);
                 })
                 ->when($city, function ($query) use ($city) {
                     $query->whereHas('pmiCenter.user', function ($query) use ($city) {
                         $query->where('city', $city);
                     });
                 })
-                ->where(function ($query) {
-                    $query->where('date', '>', Carbon::today())
-                        ->orWhere(function ($query) {
-                            $query->where('date', '=', Carbon::today())
-                                ->where('time', '>', Carbon::now('Asia/Jakarta')->format('H:i:s'));
-                        });
+                ->when(!$isPmi, function ($query) {
+                    $query->where(function ($query) {
+                        $query->where('date', '>', Carbon::today())
+                            ->orWhere(function ($query) {
+                                $query->where('date', '=', Carbon::today())
+                                    ->where('time', '>', Carbon::now('Asia/Jakarta')->format('H:i:s'));
+                            });
+                    });
                 })
-                ->orderBy('date')
+                ->orderBy('date', 'desc')
                 ->orderBy('time')
                 ->paginate($perPage, ['*'], 'page', $page);
 
@@ -116,8 +118,8 @@ class DonorScheduleController extends Controller
                     ->exists();
 
                 if (
-                    !$lastDonation ||
-                    Carbon::parse($lastDonation)->diffInMonths($donorSchedule->date) >= 4 &&
+                    (!$lastDonation ||
+                        Carbon::parse($lastDonation)->diffInMonths($donorSchedule->date)) >= 4 &&
                     !$isScheduleRegistered &&
                     !$isRegistered
                 ) {
@@ -349,11 +351,11 @@ class DonorScheduleController extends Controller
             $responses = collect($donorScheduleParticipants->items())->map(function ($participant) {
                 return [
                     'id' => $participant->donor->id,
-                    'name' => $participant->donor->user->name,
+                    'name' => $participant->donor->user->name ?? '-',
                     'status' => $participant->status,
-                    'contact' => $participant->donor->user->phone,
-                    'blood' => $participant->donor->blood_type,
-                    'rhesus' => $participant->donor->rhesus,
+                    'contact' => $participant->donor->user->phone ?? '-',
+                    'blood' => $participant->donor->blood_type ?? '',
+                    'rhesus' => $participant->donor->rhesus ?? '',
                     'last_donation' => $participant->donor->last_donation ?? '-'
                 ];
             });
@@ -400,9 +402,9 @@ class DonorScheduleController extends Controller
                 'id' => $donorScheduleParticipant->donor->id,
                 'name' => $donorScheduleParticipant->donor->user->name,
                 'status' => $donorScheduleParticipant->status,
-                'contact' => $donorScheduleParticipant->donor->user->phone,
-                'blood' => $donorScheduleParticipant->donor->blood_type,
-                'rhesus' => $donorScheduleParticipant->donor->rhesus,
+                'contact' => $donorScheduleParticipant->donor->user->phone ?? '',
+                'blood' => $donorScheduleParticipant->donor->blood_type ?? '',
+                'rhesus' => $donorScheduleParticipant->donor->rhesus ?? '',
                 'last_donation' => $donorScheduleParticipant->donor->last_donation ?? '-',
                 'systolic' => $donorScheduleParticipant->physical->systolic ?? '',
                 'diastolic' => $donorScheduleParticipant->physical->diastolic ?? '',
@@ -567,7 +569,7 @@ class DonorScheduleController extends Controller
             if ($donorUser && $donorUser->role === 'pmi') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ini adalah akun resmi PMI'
+                    'message' => 'Anda tidak bisa mendonor menggunakan akun PMI'
                 ], 400);
             }
 
@@ -586,7 +588,24 @@ class DonorScheduleController extends Controller
                     'user_id' => $donorUser->id
                 ]);
             }
+
             $donor = Donor::where('user_id', $donorUser->id)->firstOrFail();
+            $donorSchedule = DonorSchedule::findOrFail($id);
+
+            if ($donor->last_donation && Carbon::parse($donor->last_donation)->diffInMonths(Carbon::parse($donorSchedule->date)) <= 4) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Belum ada 4 bulan sejak donasi terakhir'
+                ], 400);
+            }
+
+            if (Donation::where('donor_schedule_id', $id)->where('donor_id', $donor->id)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pendonor sudah terdaftar sebagai peserta donor darah'
+                ], 400);
+            }
+
             $donor->update([
                 'blood_type' => $validatedData['blood'],
                 'rhesus' => $validatedData['rhesus']

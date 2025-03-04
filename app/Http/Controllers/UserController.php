@@ -78,7 +78,7 @@ class UserController extends Controller
             DB::beginTransaction();
 
             $user = User::create([
-                'id' => Str::orderedUuid(),
+                'id' => Str::uuid(),
                 'name' => $request->name,
                 'email' => $request->email,
                 'role' => 'donor',
@@ -86,7 +86,7 @@ class UserController extends Controller
             ]);
 
             Donor::create([
-                'id' => Str::orderedUuid(),
+                'id' => Str::uuid(),
                 'user_id' => $user->id,
             ]);
 
