@@ -97,7 +97,7 @@ class DonationController extends Controller
             $user = auth()->user();
             $isPmi = $user->role === 'pmi';
 
-            $histories = Donation::with(['pmiCenter.user'])
+            $histories = Donation::with(['pmiCenter.user', 'donor.user'])
                 ->when($isPmi, function ($query) use ($user) {
                     $query->where('pmi_center_id', $user->pmiCenter->id);
                 })
@@ -113,7 +113,7 @@ class DonationController extends Controller
                 }])
                 ->paginate($perPage, ['*'], 'page', $page);
 
-            $response = collect($histories->items())->map(function ($history) {
+            $response = collect($histories->items())->map(function ($history) use ($isPmi) {
                 return [
                     'id' => $history->id,
                     'date' => $history->donorSchedule->date ?? $history->created_at->format('Y-m-d'),
@@ -122,8 +122,12 @@ class DonationController extends Controller
                         ?? $history->pmiCenter->user->address
                         ?? 'Lokasi tidak tersedia',
                     'status' => $history->status,
-                    'pmi' => $history->pmiCenter->user->name ?? '-',
-                    'contact' => $history->pmiCenter->user->phone ?? '-'
+                    'name' => $isPmi
+                        ? ($history->donor->user->name ?? '-')
+                        : ($history->pmiCenter->user->name ?? '-'),
+                    'contact' => $isPmi
+                        ? ($history->donor->user->phone ?? '-')
+                        : ($history->pmiCenter->user->phone ?? '-'),
                 ];
             });
 
