@@ -246,7 +246,7 @@ class DonationController extends Controller
             if ($donorUser && $donorUser->role === 'pmi') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ini adalah akun resmi PMI'
+                    'message' => 'Anda tidak bisa mendonor menggunakan akun PMI'
                 ], 400);
             }
 
@@ -265,7 +265,16 @@ class DonationController extends Controller
                     'user_id' => $donorUser->id
                 ]);
             }
+
             $donor = Donor::where('user_id', $donorUser->id)->firstOrFail();
+
+            if ($donor->last_donation && Carbon::parse($donor->last_donation)->diffInMonths(Carbon::parse(now())) <= 4) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Belum ada 4 bulan sejak donasi terakhir'
+                ], 400);
+            }
+
             $donor->update([
                 'blood_type' => $validatedData['blood'],
                 'rhesus' => $validatedData['rhesus']
