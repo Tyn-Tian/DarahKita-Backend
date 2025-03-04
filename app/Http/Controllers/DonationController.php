@@ -108,6 +108,7 @@ class DonationController extends Controller
                     $query->where('status', $status);
                 })
                 ->orderByRaw("FIELD(status, 'pending', 'success', 'failed')")
+                ->orderByDesc('updated_at')
                 ->with(['donorSchedule' => function ($query) {
                     $query->orderByDesc('date')->orderByDesc('time');
                 }])
