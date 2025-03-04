@@ -90,9 +90,15 @@ class DonationController extends Controller
             $status = $request->input('status');
 
             $user = auth()->user();
+            $isPmi = $user->role === 'pmi';
 
             $histories = Donation::with(['pmiCenter.user', 'donorSchedule'])
-                ->where('donor_id', $user->donor->id)
+                ->when($isPmi, function ($query) use ($user) {
+                    $query->where('pmi_center_id', $user->pmiCenter->id);
+                })
+                ->when(!$isPmi, function ($query) use ($user) {
+                    $query->where('donor_id', $user->donor->id);
+                })
                 ->when($status && $status !== 'semua', function ($query) use ($status) {
                     $query->where('status', $status);
                 })
@@ -148,9 +154,17 @@ class DonationController extends Controller
     {
         try {
             $user = auth()->user();
-            $history = Donation::with(['pmiCenter.user', 'donorSchedule', 'physical', 'donor'])
-                ->where('donor_id', $user->donor->id)
-                ->findOrFail($id);
+            $isPmi = $user->role === 'pmi';
+
+            if ($isPmi) {
+                $history = Donation::with(['pmiCenter.user', 'donorSchedule', 'physical', 'donor'])
+                    ->where('pmi_center_id', $user->pmiCenter->id)
+                    ->findOrFail($id);
+            } else {
+                $history = Donation::with(['pmiCenter.user', 'donorSchedule', 'physical', 'donor'])
+                    ->where('donor_id', $user->donor->id)
+                    ->findOrFail($id);
+            }
 
             $response = [
                 'id' => $history->id,
