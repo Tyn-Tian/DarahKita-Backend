@@ -218,7 +218,7 @@ class DonationController extends Controller
         }
     }
 
-    public function postAddDonor(Request $request)
+    public function postAddDonation(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
