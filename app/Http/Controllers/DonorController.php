@@ -161,4 +161,94 @@ class DonorController extends Controller
             ], 500);
         }
     }
+
+    public function getDonors(Request $request)
+    {
+        try {
+            $perPage = $request->input('per_page', 5);
+            $page = $request->input('page', 1);
+
+            $donors = Donor::with(['user'])
+                ->paginate($perPage, ['*'], 'page', $page);
+
+            $response = collect($donors->items())->map(function ($donor) {
+                return [
+                    'id' => $donor->id,
+                    'name' => $donor->user->name ?? '-',
+                    'phone' => $donor->user->phone ?? '-',
+                    'blood' => $donor->blood_type ?? '',
+                    'rhesus' => $donor->rhesus ?? '',
+                    'address' => $donor->user->address ?? '-',
+                    'last_donation' => $donor->last_donation ?? '-'
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data pendonor berhasil diambil',
+                'data' => $response,
+                'pagination' => [
+                    'current_page' => $donors->currentPage(),
+                    'last_page' => $donors->lastPage(),
+                    'per_page' => $donors->perPage(),
+                    'total' => $donors->total()
+                ]
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak ditemukan.'
+            ], 404);
+        } catch (QueryException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Database error: ' . $e->getMessage()
+            ], 500);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getDonorDetail(Request  $request, string $id)
+    {
+        try {
+            $donor = Donor::with(['user'])->findOrFail($id);
+
+            $response = [
+                'id' => $donor->id,
+                'name' => $donor->user->name ?? '-',
+                'phone' => $donor->user->phone ?? '-',
+                'blood' => $donor->blood_type ?? '',
+                'rhesus' => $donor->rhesus ?? '',
+                'address' => $donor->user->address ?? '-',
+                'last_donation' => $donor->last_donation ?? '-',
+                'city' => $donor->user->city ?? '-',
+                'email' => $donor->user->email ?? '-'
+            ];
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data pendonor berhasil diambil',
+                'data' => $response
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak ditemukan.'
+            ], 404);
+        } catch (QueryException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Database error: ' . $e->getMessage()
+            ], 500);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
