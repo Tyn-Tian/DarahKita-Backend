@@ -670,4 +670,42 @@ class DonorScheduleController extends Controller
             ], 500);
         }
     }
+
+    public function getLastDonation(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            $donorSchedule = DonorSchedule::where('pmi_center_id', $user->pmiCenter->id)
+                ->orderByDesc('created_at')
+                ->firstOrFail();
+
+            $response = [
+                'id' => $donorSchedule->id,
+                'date' => $donorSchedule->date ?? "",
+                'address' => $donorSchedule->location ?? "",
+                'time' => $donorSchedule->time ?? ""
+            ];
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Jadwal donor darah terakhir berhasil diambil',
+                'data' => $response
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak ditemukan.'
+            ], 404);
+        } catch (QueryException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Database error: ' . $e->getMessage()
+            ], 500);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

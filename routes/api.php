@@ -29,6 +29,8 @@ Route::middleware('jwt.verify')->group(function () {
         Route::patch('/profile', [DonorController::class, 'updateProfile']);
 
         Route::post('/donor-schedules/{id}', [DonorScheduleController::class, 'postRegisterDonorSchedule']);
+
+        Route::get('/last-donation', [DonationController::class, 'getLastDonation']);
     });
 
     Route::middleware('role:pmi')->group(function () {
@@ -41,6 +43,8 @@ Route::middleware('jwt.verify')->group(function () {
         Route::post('/donor-schedules/{id}/participants', [DonorScheduleController::class, 'postAddParticipant']);
         Route::get('/donor-schedules/{id}/participants/{donorId}', [DonorScheduleController::class, 'getDonorScheduleParticipantDetail']);
         Route::post('/donor-schedules/{id}/participants/{donorId}', [DonorScheduleController::class, 'postUpdateStatusParticipant']);
+
+        Route::get('/last-donor-schedule', [DonorScheduleController::class, 'getLastDonation']);
 
         Route::post('/donations', [DonationController::class, 'postAddDonation']);
 

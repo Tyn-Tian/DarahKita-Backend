@@ -343,4 +343,53 @@ class DonationController extends Controller
             ], 500);
         }
     }
+
+    public function getLastDonation(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            $donation = Donation::where('donor_id', $user->donor->id)
+                ->orderByDesc('updated_at')
+                ->firstOrFail();
+
+            $response = [
+                'id' => $donation->id,
+                'date' => $donation->donorSchedule->date ?? $donation->created_at->format('Y-m-d'),
+                'time' => $donation->donorSchedule->time ?? $donation->created_at->format('H:i:s'),
+                'location' => $donation->donorSchedule->location ?? $donation->pmiCenter->user->address ?? '-',
+                'status' => $donation->status,
+                'pmi' => $donation->pmiCenter->user->name,
+                'contact' => $donation->pmiCenter->user->phone,
+                'blood' => $donation->donor->blood_type,
+                'rhesus' => $donation->donor->rhesus,
+                'systolic' => $donation->physical->systolic,
+                'diastolic' => $donation->physical->diastolic,
+                'pulse' => $donation->physical->pulse,
+                'weight' => $donation->physical->weight,
+                'temperatur' => $donation->physical->temperatur,
+                'hemoglobin' => $donation->physical->hemoglobin,
+            ];
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Donasi terakhir berhasil diambil',
+                'data' => $response
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak ditemukan.'
+            ], 404);
+        } catch (QueryException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Database error: ' . $e->getMessage()
+            ], 500);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
